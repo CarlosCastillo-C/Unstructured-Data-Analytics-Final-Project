@@ -196,8 +196,6 @@ Trading Activity
 ```{python}
 
 full_df['volume_change'] = full_df['volume'].pct_change()
-full_df['volume_ma_7'] = full_df['volume'].rolling(7).mean()
-
 ```
 
 ```{python}
@@ -355,7 +353,6 @@ NVDA_df['moving_average_7'] = NVDA_df['close'].rolling(7).mean()
 NVDA_df['moving_average_30'] = NVDA_df['close'].rolling(30).mean()
 
 NVDA_df['volume_change'] = NVDA_df['volume'].pct_change()
-NVDA_df['volume_ma_7'] = NVDA_df['volume'].rolling(7).mean()
 
 NVDA_df["vol_10"] = NVDA_df["close"].pct_change().rolling(10).std()
 NVDA_df["vol_20"] = NVDA_df["close"].pct_change().rolling(20).std()
@@ -477,7 +474,6 @@ JNJ_df['moving_average_7'] = JNJ_df['close'].rolling(7).mean()
 JNJ_df['moving_average_30'] = JNJ_df['close'].rolling(30).mean()
 
 JNJ_df['volume_change'] = JNJ_df['volume'].pct_change()
-JNJ_df['volume_ma_7'] = JNJ_df['volume'].rolling(7).mean()
 
 JNJ_df["vol_10"] = JNJ_df["close"].pct_change().rolling(10).std()
 JNJ_df["vol_20"] = JNJ_df["close"].pct_change().rolling(20).std()
@@ -598,7 +594,6 @@ AMZN_df['moving_average_7'] = AMZN_df['close'].rolling(7).mean()
 AMZN_df['moving_average_30'] = AMZN_df['close'].rolling(30).mean()
 
 AMZN_df['volume_change'] = AMZN_df['volume'].pct_change()
-AMZN_df['volume_ma_7'] = AMZN_df['volume'].rolling(7).mean()
 
 AMZN_df["vol_10"] = AMZN_df["close"].pct_change().rolling(10).std()
 AMZN_df["vol_20"] = AMZN_df["close"].pct_change().rolling(20).std()
