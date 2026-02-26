@@ -9,7 +9,7 @@ The result of the models show that they have limited predictive power when forec
 
 ___
 
-## Data 
+## Dataset Overview
 
 ### S&P (500) (SPY)
 
@@ -96,4 +96,27 @@ VIX, also known as the fear index, measures the expected volatility of stocks ov
 - target
 
 The target variable is the percentage return over the next 5 days, chosen to reduce noise and maximize accuracy.
+
+---
+
+### Methodology
+
+Training and Testing Data
+
+- Data was split using a time-based split due to the fact that this is a time-series prediction.
+- The training set is the first 90% of observations, which was used to fit the model.
+- The testing set is set at the last 10% of the observations to evaluate the model. 
+
+Models Used
+
+- A Random Forest regression model was used to predict 5-day forward returns
+
+Evaluation Metrics 
+
+- Mean Absolute Error (MAE) was used to predict the magnitude error 
+- R-Squared (R^2) was used to assess the explanatory power.
+- Directional Accuracy was used to see how accurately the model can predict the sign of returns.
+
+
+
 
