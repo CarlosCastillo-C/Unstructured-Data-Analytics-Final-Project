@@ -1,0 +1,675 @@
+---
+title: "Final Project"
+format: html
+author: Carlos Castillo
+toc: true
+toc-location: left
+self-contained: true
+jupyter: python3
+---
+
+
+I am trying to see how well can a machine learning model predict stock prices for the SNP&500 and NVIDA, JNJ, and AMZN. I used the SNP500 due to the fact it is a collection of variours stocks and I used indivdual stocks to see if the model can perform better or worse. 
+
+
+Importing Packages
+```{python}
+
+import pandas as pd
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+import requests
+from bs4 import BeautifulSoup
+import yfinance as yf
+
+from alpaca.data.historical import StockHistoricalDataClient
+from alpaca.data.requests import StockBarsRequest
+from alpaca.data.timeframe import TimeFrame
+import requests
+import glob as glob
+import pandas as pd 
+import os.path
+
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+import json
+
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score, precision_score, confusion_matrix, recall_score, f1_score
+from sklearn.preprocessing import LabelEncoder
+from sklearn.ensemble import RandomForestRegressor
+
+from sklearn.metrics import mean_squared_error, r2_score
+from collections import Counter
+import itertools
+import xgboost as xgb # For XGBoost
+from sklearn.metrics import roc_curve, roc_auc_score
+from sklearn.metrics import (
+    accuracy_score, log_loss, roc_auc_score, confusion_matrix, classification_report, ConfusionMatrixDisplay, f1_score
+)
+from plotnine import *  # For visualizations (ggplot2-style)
+from sklearn.metrics import mean_absolute_error
+from sklearn.model_selection import ParameterGrid
+
+import shap
+from tqdm import tqdm  # progress bar
+
+```
+
+Using the Alpaca API to gather SNP500 data from 2016 to 2026 
+```{python}
+
+alpaca_api_key = "PK7D3N2ZTF7Q2UFG6QJG6GSDC2"
+alpaca_api_sercet = "7bJT3zrMCoidQPE3Sg2DKZkwivGTfuuGXAWnGfRXNcvc"
+
+stock = "SPY"
+
+start_date = '2015-01-04'
+end_date = '2026-02-19'
+
+client = StockHistoricalDataClient(alpaca_api_key, alpaca_api_sercet)
+
+request = StockBarsRequest(symbol_or_symbols = stock, timeframe = TimeFrame.Day, start = start_date, end = end_date)
+
+bars = client.get_stock_bars(request)
+full_df = bars.df.reset_index()
+
+full_df['timestamp'] = pd.to_datetime(full_df['timestamp']).dt.tz_localize(None)
+full_df['date'] = full_df['timestamp'].dt.normalize()
+
+```
+
+
+Due to Alpaca data limitations I used the yfinance package to get data reaching back to 2000 for a larger dataset and better for the model
+
+```{python}
+
+yfSPY = yf.download("SPY", start="2000-01-01", end="2016-10-03")
+if isinstance(yfSPY.columns, pd.MultiIndex):
+    yfSPY.columns = yfSPY.columns.get_level_values(0)
+
+yfSPY = yfSPY.reset_index().rename(columns={"Date": "timestamp"})
+
+yfSPY.columns = [c.lower().replace(" ", "_") for c in yfSPY.columns]
+
+yfSPY["symbol"] = "SPY"
+
+yfSPY = yfSPY[["symbol", "timestamp", "open", "high", "low", "close", "volume"]]
+yfSPY.head()
+
+```
+
+Vix data is being included to capture market volatility and sentiment which can be a strong predictor of stock price movements.
+```{python}
+vix = yf.download('^VIX', start='2000-01-01', end='2026-02-19')['Close'].reset_index()
+
+vix_df = vix.reset_index().rename(columns={'Date':'timestamp'})
+```
+
+```{python}
+vix_df = vix_df.rename(columns={'^VIX': 'vix'})
+vix_df['timestamp'] = pd.to_datetime(vix_df['timestamp'])
+vix_df = vix_df[['timestamp', 'vix']]
+```
+
+```{python}
+full_df['timestamp'] = pd.to_datetime(full_df['timestamp']).dt.normalize()
+vix_df['timestamp'] = pd.to_datetime(vix_df['timestamp']).dt.normalize()
+
+yfSPY['timestamp'] = pd.to_datetime(yfSPY['timestamp']).dt.normalize()
+
+```
+
+
+Dataframes are merged to have the VIX data for both the SNP500 and the individual stocks.
+
+```{python}
+yfSPY = yfSPY.merge(vix_df, on='timestamp', how='left')
+
+full_df = full_df.merge(vix_df, on='timestamp', how='left')
+
+```
+
+
+```{python}
+
+full_df = pd.concat([yfSPY, full_df], axis=0)
+
+full_df = full_df.reset_index(drop=True)
+```
+
+
+```{python}
+
+full_df = full_df.merge(vix_df, on='timestamp', how='left')
+
+```
+
+
+```{python}
+
+full_df = full_df.rename(columns={'vix_x': 'vix'})
+
+full_df = full_df.drop(columns=['trade_count', 'vwap', 'date', 'vix_y'])
+
+```
+
+
+Creating new variables to for the model.
+
+Price movement and day returns. This is made to see how much the prices have changed since the previous, day, 3 days, and 5 days before. This is done to try to capture price momentum and trading signals for the stocks. This is a better variable to predict then raw prices like the close variable.
+
+```{python}
+
+full_df['1_day_return'] = full_df['close'].pct_change()
+
+
+full_df["3_day_return"] = full_df["close"].pct_change(3)
+full_df["5_day_return"] = full_df["close"].pct_change(5)
+
+```
+
+
+
+Daily range check volatility of a stock during the day and gap gets the price movement overnight which predicts overnight sentiment shock. 
+```{python}
+
+full_df['daily_range'] = full_df['high'] - full_df['low']
+full_df['gap'] = full_df['open'] - full_df['close'].shift(1)
+
+```
+
+This measures short and long term trends which also helps with any noise that the model can capture.
+```{python}
+
+full_df['moving_average_7'] = full_df['close'].rolling(7).mean()
+full_df['moving_average_30'] = full_df['close'].rolling(30).mean()
+
+```
+
+Trading Activity
+```{python}
+
+full_df['volume_change'] = full_df['volume'].pct_change()
+full_df['volume_ma_7'] = full_df['volume'].rolling(7).mean()
+
+```
+
+```{python}
+
+full_df['close_vs_moving_average_7']  = full_df['close'] - full_df['moving_average_7']
+full_df['close_vs_moving_average_30'] = full_df['close'] - full_df['moving_average_30']
+
+```
+
+Volatility
+```{python}
+full_df["vol_10"] = full_df["close"].pct_change().rolling(10).std()
+full_df["vol_20"] = full_df["close"].pct_change().rolling(20).std()
+```
+
+```{python}
+full_df['target'] = full_df['close'].pct_change(5).shift(-5)
+```
+
+The features that I created are based on common technical indicators and market sentiment measures that are often used in stock price prediction models. These features are designed to capture various aspects of stock price movements, including momentum, volatility, and trading activity, which can help the model make more accurate predictions.
+
+```{python}
+
+features = ['1_day_return',"3_day_return","5_day_return",'daily_range','gap','close_vs_moving_average_7','close_vs_moving_average_30', 'volume_change','vol_10','vol_20', 'vix']
+model_df = full_df[features + ['target']].dropna().copy()
+```
+
+
+
+```{python}
+
+
+X = model_df[features]
+y = model_df['target']
+
+
+```
+
+Time split
+```{python}
+
+
+split = int(len(model_df) * 0.9)
+X_train, X_test = X.iloc[:split], X.iloc[split:]
+y_train, y_test = y.iloc[:split], y.iloc[split:]
+
+```
+
+I used a random forest regression model to predict the stock price movements.
+
+```{python}
+
+model = RandomForestRegressor(n_estimators=300, max_depth=10, random_state=42)
+
+model.fit(X_train, y_train)
+
+```
+
+I evaluate the model using mean absolute error (MAE) and R² score.
+
+```{python}
+
+
+preds = model.predict(X_test)
+mae = mean_absolute_error(y_test, preds)
+print(f"MAE: {mae:.6f}") 
+
+plt.figure(figsize=(12,6))
+plt.plot(y_test.values, label="Actual Price") 
+plt.plot(preds, label="Predicted Price")
+plt.title("SNP Price Prediction") 
+plt.xlabel("Time")
+plt.ylabel('Price')
+plt.legend()
+plt.show()
+```
+
+I also evaluate the directional accuracy of the model, which measures how often the model correctly predicts the direction of price movement (up or down) rather than the exact price.
+
+```{python}
+
+
+print("R²:", r2_score(y_test, preds))
+direction_acc = (np.sign(preds) == np.sign(y_test)).mean()
+print("Directional Accuracy:", direction_acc)
+
+
+```
+
+Shap values are used to interpret the model and understand which features are most important in predicting stock price movements.
+
+```{python}
+
+
+explainer = shap.TreeExplainer(model)
+
+shap_values = explainer.shap_values(X_test)
+
+shap.summary_plot(shap_values, X_test)
+
+shap.summary_plot(shap_values, X_test, plot_type="bar")
+
+```
+
+
+How would models do with indivdial stocks?
+
+Lets start with NVDA
+
+```{python}
+
+stock_NVDA = 'NVDA'
+start_data_NVDA = '2018-01-01'
+end_date_NVDA = '2026-02-18'
+client = StockHistoricalDataClient(alpaca_api_key, alpaca_api_sercet)
+
+request_NVDA = StockBarsRequest(symbol_or_symbols = stock_NVDA, timeframe = TimeFrame.Day, start = start_data_NVDA, end = end_date_NVDA)
+
+bars_NVDA = client.get_stock_bars(request_NVDA)
+NVDA_df = bars_NVDA.df.reset_index()
+
+```
+
+```{python}
+NVDA_df['timestamp'] = pd.to_datetime(NVDA_df['timestamp']).dt.date
+```
+
+```{python}
+
+vix_NVDA = yf.download('^VIX', start='2018-01-01', end='2026-02-18')['Close'].reset_index()
+vix_NVDA_df = vix_NVDA.reset_index().rename(columns={'Date':'timestamp'})
+vix_NVDA_df = vix_NVDA_df.rename(columns={'^VIX': 'vix'})
+vix_NVDA_df['timestamp'] = pd.to_datetime(vix_NVDA_df['timestamp'])
+vix_NVDA_df = vix_NVDA_df[['timestamp', 'vix']]
+
+vix_NVDA_df['timestamp'] = pd.to_datetime(vix_NVDA_df['timestamp']).dt.normalize()
+NVDA_df['timestamp'] = pd.to_datetime(NVDA_df['timestamp']).dt.normalize()
+
+NVDA_df = NVDA_df.merge(vix_NVDA_df, on='timestamp', how='left')
+
+```
+
+
+```{python}
+NVDA_df['percent_change'] = NVDA_df['close'].pct_change()
+
+NVDA_df["return_3"] = NVDA_df["close"].pct_change(3)
+NVDA_df["return_5"] = NVDA_df["close"].pct_change(5)
+
+NVDA_df['daily_range'] = NVDA_df['high'] - NVDA_df['low']
+
+NVDA_df['gap'] = NVDA_df['open'] - NVDA_df['close'].shift(1)
+
+NVDA_df['moving_average_7'] = NVDA_df['close'].rolling(7).mean()
+NVDA_df['moving_average_30'] = NVDA_df['close'].rolling(30).mean()
+
+NVDA_df['volume_change'] = NVDA_df['volume'].pct_change()
+NVDA_df['volume_ma_7'] = NVDA_df['volume'].rolling(7).mean()
+
+NVDA_df["vol_10"] = NVDA_df["close"].pct_change().rolling(10).std()
+NVDA_df["vol_20"] = NVDA_df["close"].pct_change().rolling(20).std()
+
+NVDA_df['close_vs_moving_average_7'] = NVDA_df['close'] - NVDA_df['moving_average_7']
+NVDA_df['close_vs_moving_average_30'] = NVDA_df['close'] - NVDA_df['moving_average_30']
+
+## 5-day forward return target
+NVDA_df['target'] = NVDA_df['close'].pct_change(5).shift(-5)
+```
+
+```{python}
+
+
+features_NVDA = ['percent_change','return_3','return_5','daily_range','gap','close_vs_moving_average_7','close_vs_moving_average_30', 'volume_change','vol_10','vol_20', 'vix']
+
+modelNVDA_df = NVDA_df[features_NVDA + ['target']].dropna().copy()
+```
+
+```{python}
+
+X_NVDA = modelNVDA_df[features_NVDA]
+y_NVDA = modelNVDA_df['target']
+
+```
+
+```{python}
+
+split_NVDA = int(len(modelNVDA_df) * 0.9)
+X_train_NVDA, X_test_NVDA = X_NVDA.iloc[:split_NVDA], X_NVDA.iloc[split_NVDA:]
+y_train_NVDA, y_test_NVDA = y_NVDA.iloc[:split_NVDA], y_NVDA.iloc[split_NVDA:]
+```
+
+```{python}
+
+model_NVDA = RandomForestRegressor(n_estimators=300, max_depth=10, random_state=42)
+
+model_NVDA.fit(X_train_NVDA, y_train_NVDA)
+
+```
+
+```{python}
+preds_NVDA = model_NVDA.predict(X_test_NVDA)
+mae_NVDA = mean_absolute_error(y_test_NVDA, preds_NVDA)
+print(f"MAE: {mae_NVDA:.2f}") 
+
+plt.figure(figsize=(12,6))
+plt.plot(y_test_NVDA.values, label="Actual Price") 
+plt.plot(preds_NVDA, label="Predicted Price")
+plt.title("NVDA Price Prediction") 
+plt.xlabel("Time")
+plt.ylabel('Price')
+plt.legend()
+plt.show()
+```
+
+```{python}
+print("R²:", r2_score(y_test_NVDA, preds_NVDA))
+
+direction_acc_NVDA = (np.sign(preds_NVDA) == np.sign(y_test_NVDA)).mean()
+print("Directional Accuracy:", direction_acc_NVDA)
+```
+
+```{python}
+
+explainer = shap.TreeExplainer(model_NVDA)
+shap_values_NVDA = explainer.shap_values(X_test_NVDA)
+
+shap.summary_plot(shap_values_NVDA, X_test_NVDA)
+
+shap.summary_plot(shap_values_NVDA, X_test_NVDA, plot_type="bar")
+```
+
+Now how does it do with JNJ?
+
+```{python}
+
+stock_JNJ = 'JNJ'
+start_data_JNJ = '2018-01-01'
+end_date_JNJ = '2026-02-18'
+client = StockHistoricalDataClient(alpaca_api_key, alpaca_api_sercet)
+
+request_JNJ = StockBarsRequest(symbol_or_symbols = stock_JNJ, timeframe = TimeFrame.Day, start = start_data_JNJ, end = end_date_JNJ)
+
+bars_JNJ = client.get_stock_bars(request_JNJ)
+JNJ_df = bars_JNJ.df.reset_index()
+
+```
+
+```{python}
+JNJ_df['timestamp'] = pd.to_datetime(JNJ_df['timestamp']).dt.date
+```
+
+```{python}
+
+vix_JNJ = yf.download('^VIX', start='2018-01-01', end='2026-02-18')['Close'].reset_index()
+vix_JNJ_df = vix_JNJ.reset_index().rename(columns={'Date':'timestamp'})
+vix_JNJ_df = vix_JNJ_df.rename(columns={'^VIX': 'vix'})
+vix_JNJ_df['timestamp'] = pd.to_datetime(vix_JNJ_df['timestamp']).dt.normalize()
+JNJ_df['timestamp'] = pd.to_datetime(JNJ_df['timestamp']).dt.normalize()
+
+JNJ_df = JNJ_df.merge(vix_JNJ_df, on='timestamp', how='left')
+
+
+```
+
+
+```{python}
+JNJ_df['percent_change'] = JNJ_df['close'].pct_change()
+
+JNJ_df["return_3"] = JNJ_df["close"].pct_change(3)
+JNJ_df["return_5"] = JNJ_df["close"].pct_change(5)
+
+JNJ_df['daily_range'] = JNJ_df['high'] - JNJ_df['low']
+
+JNJ_df['gap'] = JNJ_df['open'] - JNJ_df['close'].shift(1)
+
+JNJ_df['moving_average_7'] = JNJ_df['close'].rolling(7).mean()
+JNJ_df['moving_average_30'] = JNJ_df['close'].rolling(30).mean()
+
+JNJ_df['volume_change'] = JNJ_df['volume'].pct_change()
+JNJ_df['volume_ma_7'] = JNJ_df['volume'].rolling(7).mean()
+
+JNJ_df["vol_10"] = JNJ_df["close"].pct_change().rolling(10).std()
+JNJ_df["vol_20"] = JNJ_df["close"].pct_change().rolling(20).std()
+
+JNJ_df['close_vs_moving_average_7'] = JNJ_df['close'] - JNJ_df['moving_average_7']
+JNJ_df['close_vs_moving_average_30'] = JNJ_df['close'] - JNJ_df['moving_average_30']
+```
+
+
+5-day forward return target
+```{python}
+JNJ_df['target'] = JNJ_df['close'].pct_change(5).shift(-5)
+```
+
+```{python}
+features_JNJ = ['percent_change','return_3','return_5','daily_range','gap','close_vs_moving_average_7','close_vs_moving_average_30', 'volume_change','vol_10','vol_20', 'vix']
+
+modelJNJ_df = JNJ_df[features_JNJ + ['target']].dropna().copy()
+```
+
+```{python}
+
+X_JNJ = modelJNJ_df[features_JNJ]
+y_JNJ = modelJNJ_df['target']
+
+```
+
+```{python}
+
+split_JNJ = int(len(modelJNJ_df) * 0.9)
+X_train_JNJ, X_test_JNJ = X_JNJ.iloc[:split_JNJ], X_JNJ.iloc[split_JNJ:]
+y_train_JNJ, y_test_JNJ = y_JNJ.iloc[:split_JNJ], y_JNJ.iloc[split_JNJ:]
+```
+
+```{python}
+
+model_JNJ = RandomForestRegressor(n_estimators=300, max_depth=10, random_state=42)
+
+model_JNJ.fit(X_train_JNJ, y_train_JNJ)
+
+```
+
+```{python}
+preds_JNJ = model_JNJ.predict(X_test_JNJ)
+mae_JNJ = mean_absolute_error(y_test_JNJ, preds_JNJ)
+print(f"MAE: {mae_JNJ:.2f}") 
+
+plt.figure(figsize=(12,6))
+plt.plot(y_test_JNJ.values, label="Actual Price") 
+plt.plot(preds_JNJ, label="Predicted Price")
+plt.title("JNJ Price Prediction") 
+plt.xlabel("Time")
+plt.ylabel('Price')
+plt.legend()
+plt.show()
+
+
+
+```
+
+```{python}
+print("R²:", r2_score(y_test_JNJ, preds_JNJ))
+
+direction_acc_JNJ = (np.sign(preds_JNJ) == np.sign(y_test_JNJ)).mean()
+print("Directional Accuracy:", direction_acc_JNJ)
+```
+
+```{python}
+explainer = shap.TreeExplainer(model_JNJ)
+shap_values_JNJ = explainer.shap_values(X_test_JNJ)
+shap.summary_plot(shap_values_JNJ, X_test_JNJ)
+shap.summary_plot(shap_values_JNJ, X_test_JNJ, plot_type="bar")
+
+
+```
+
+Lastly how does it do with AMZN?
+
+```{python}
+stock_AMZN = 'AMZN'
+start_data_AMZN = '2018-01-01'
+end_date_AMZN = '2026-02-18'
+client = StockHistoricalDataClient(alpaca_api_key, alpaca_api_sercet)
+
+request_AMZN = StockBarsRequest(symbol_or_symbols = stock_AMZN, timeframe = TimeFrame.Day, start = start_data_AMZN, end = end_date_AMZN)
+
+bars_AMZN = client.get_stock_bars(request_AMZN)
+AMZN_df = bars_AMZN.df.reset_index()
+```
+
+```{python}
+AMZN_df['timestamp'] = pd.to_datetime(AMZN_df['timestamp']).dt.date
+```
+
+```{python}
+
+vix_AMZN = yf.download('^VIX', start='2017-01-01', end='2026-02-18')['Close'].reset_index()
+vix_AMZN_df = vix_AMZN.reset_index().rename(columns={'Date':'timestamp'})
+vix_AMZN_df = vix_AMZN_df.rename(columns={'^VIX': 'vix'})
+vix_AMZN_df['timestamp'] = pd.to_datetime(vix_AMZN_df['timestamp']).dt.normalize()
+AMZN_df['timestamp'] = pd.to_datetime(AMZN_df['timestamp']).dt.normalize()
+AMZN_df = AMZN_df.merge(vix_AMZN_df, on='timestamp', how='left')
+
+
+```
+
+```{python}
+AMZN_df['percent_change'] = AMZN_df['close'].pct_change()
+
+AMZN_df["return_3"] = AMZN_df["close"].pct_change(3)
+AMZN_df["return_5"] = AMZN_df["close"].pct_change(5)
+
+AMZN_df['daily_range'] = AMZN_df['high'] - AMZN_df['low']
+
+AMZN_df['gap'] = AMZN_df['open'] - AMZN_df['close'].shift(1)
+
+AMZN_df['moving_average_7'] = AMZN_df['close'].rolling(7).mean()
+AMZN_df['moving_average_30'] = AMZN_df['close'].rolling(30).mean()
+
+AMZN_df['volume_change'] = AMZN_df['volume'].pct_change()
+AMZN_df['volume_ma_7'] = AMZN_df['volume'].rolling(7).mean()
+
+AMZN_df["vol_10"] = AMZN_df["close"].pct_change().rolling(10).std()
+AMZN_df["vol_20"] = AMZN_df["close"].pct_change().rolling(20).std()
+
+AMZN_df['close_vs_moving_average_7'] = AMZN_df['close'] - AMZN_df['moving_average_7']
+AMZN_df['close_vs_moving_average_30'] = AMZN_df['close'] - AMZN_df['moving_average_30']
+```
+
+5-day forward return target
+
+```{python}
+AMZN_df['target'] = AMZN_df['close'].pct_change(5).shift(-5)
+
+
+```
+
+```{python}
+features_AMZN = ['percent_change','return_3','return_5','daily_range','gap','close_vs_moving_average_7','close_vs_moving_average_30', 'volume_change','vol_10','vol_20', 'vix']
+
+modelAMZN_df = AMZN_df[features_AMZN + ['target']].dropna().copy()
+```
+
+```{python}
+X_AMZN = modelAMZN_df[features_AMZN]
+y_AMZN = modelAMZN_df['target']
+```
+
+```{python}
+
+split_AMZN = int(len(modelAMZN_df) * 0.9)
+X_train_AMZN, X_test_AMZN = X_AMZN.iloc[:split_AMZN], X_AMZN.iloc[split_AMZN:]
+y_train_AMZN, y_test_AMZN = y_AMZN.iloc[:split_AMZN], y_AMZN.iloc[split_AMZN:]
+```
+
+```{python}
+model_AMZN = RandomForestRegressor(n_estimators=300, max_depth=10, random_state=42)
+
+model_AMZN.fit(X_train_AMZN, y_train_AMZN)
+```
+
+```{python}
+preds_AMZN = model_AMZN.predict(X_test_AMZN)
+mae_AMZN = mean_absolute_error(y_test_AMZN, preds_AMZN)
+print(f"MAE: {mae_AMZN:.2f}") 
+
+plt.figure(figsize=(12,6))
+plt.plot(y_test_AMZN.values, label="Actual Price") 
+plt.plot(preds_AMZN, label="Predicted Price")
+plt.title("AMZN Price Prediction") 
+plt.xlabel("Time")
+plt.ylabel('Price')
+plt.legend()
+plt.show()
+
+
+```
+
+
+```{python}
+print("R²:", r2_score(y_test_AMZN, preds_AMZN))
+
+direction_acc_AMZN = (np.sign(preds_AMZN) == np.sign(y_test_AMZN)).mean()
+print("Directional Accuracy:", direction_acc_AMZN)
+```
+
+```{python}
+
+explainer = shap.TreeExplainer(model_AMZN)
+shap_values_AMZN = explainer.shap_values(X_test_AMZN)
+shap.summary_plot(shap_values_AMZN, X_test_AMZN)
+shap.summary_plot(shap_values_AMZN, X_test_AMZN, plot_type="bar")
+
+```
+
