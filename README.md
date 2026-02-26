@@ -9,6 +9,7 @@ The result of the models show that they have limited predictive power when forec
 
 
 
+
 ## Data 
 
 ### S&P (500) (SPY)
