@@ -8,6 +8,7 @@ This project asks and answers the question of how well a machine learning model,
 The result of the models show that they have limited predictive power when forecasting 5-day returns. This result is consistent with the market theories and proves that just using historical numerical data is extremely limited.
 
 
+
 ## Data 
 
 ### S&P (500) (SPY)
@@ -37,6 +38,8 @@ The result of the models show that they have limited predictive power when forec
 - Observations: 2042 daily obervations
 - Variables: 11 predictors
 - Target Variable: 5-day forward return
+
+
 
 ## Explanatory Variables
 
