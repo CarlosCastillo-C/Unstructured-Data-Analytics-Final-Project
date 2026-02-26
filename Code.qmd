@@ -342,7 +342,7 @@ NVDA_df = NVDA_df.merge(vix_NVDA_df, on='timestamp', how='left')
 
 
 ```{python}
-NVDA_df['percent_change'] = NVDA_df['close'].pct_change()
+NVDA_df['1_day_return'] = NVDA_df['close'].pct_change()
 
 NVDA_df["return_3"] = NVDA_df["close"].pct_change(3)
 NVDA_df["return_5"] = NVDA_df["close"].pct_change(5)
@@ -464,7 +464,7 @@ JNJ_df = JNJ_df.merge(vix_JNJ_df, on='timestamp', how='left')
 
 
 ```{python}
-JNJ_df['percent_change'] = JNJ_df['close'].pct_change()
+JNJ_df['1_day_return'] = JNJ_df['close'].pct_change()
 
 JNJ_df["return_3"] = JNJ_df["close"].pct_change(3)
 JNJ_df["return_5"] = JNJ_df["close"].pct_change(5)
@@ -585,7 +585,7 @@ AMZN_df = AMZN_df.merge(vix_AMZN_df, on='timestamp', how='left')
 ```
 
 ```{python}
-AMZN_df['percent_change'] = AMZN_df['close'].pct_change()
+AMZN_df['1_day_return'] = AMZN_df['close'].pct_change()
 
 AMZN_df["return_3"] = AMZN_df["close"].pct_change(3)
 AMZN_df["return_5"] = AMZN_df["close"].pct_change(5)
