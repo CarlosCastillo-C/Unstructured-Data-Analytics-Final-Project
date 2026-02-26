@@ -7,8 +7,7 @@ This project asks and answers the question of how well a machine learning model,
 
 The result of the models show that they have limited predictive power when forecasting 5-day returns. This result is consistent with the market theories and proves that just using historical numerical data is extremely limited.
 
-
-
+___
 
 ## Data 
 
@@ -40,7 +39,7 @@ The result of the models show that they have limited predictive power when forec
 - Variables: 11 predictors
 - Target Variable: 5-day forward return
 
-
+___
 
 ## Explanatory Variables
 
