@@ -289,15 +289,22 @@ print("Directional Accuracy:", direction_acc)
 Shap values are used to interpret the model and understand which features are most important in predicting stock price movements.
 
 ```{python}
-
-
 explainer = shap.TreeExplainer(model)
-
 shap_values = explainer.shap_values(X_test)
+```
 
-shap.summary_plot(shap_values, X_test)
+```{python}
+plt.figure(figsize=(10,6))
+shap.summary_plot(shap_values, X_test, show=False)
+plt.savefig("shap_summary.png", dpi=300, bbox_inches="tight")
+plt.close()
+```
 
-shap.summary_plot(shap_values, X_test, plot_type="bar")
+```{python}
+plt.figure(figsize=(10,6))
+shap.summary_plot(shap_values, X_test, plot_type="bar", show=False)
+plt.savefig("shap_bar.png", dpi=300, bbox_inches="tight")
+plt.close()
 
 ```
 
@@ -423,10 +430,20 @@ print("Directional Accuracy:", direction_acc_NVDA)
 
 explainer = shap.TreeExplainer(model_NVDA)
 shap_values_NVDA = explainer.shap_values(X_test_NVDA)
+```
 
-shap.summary_plot(shap_values_NVDA, X_test_NVDA)
+```{python}
+plt.figure(figsize=(10,6))
+shap.summary_plot(shap_values_NVDA, X_test_NVDA, show=False)
+plt.savefig("NVDA_shap_summary.png", dpi=300, bbox_inches="tight")
+plt.close()
+```
 
-shap.summary_plot(shap_values_NVDA, X_test_NVDA, plot_type="bar")
+```{python}
+plt.figure(figsize=(10,6))
+shap.summary_plot(shap_values_NVDA, X_test_NVDA, plot_type="bar", show=False)
+plt.savefig("NVDA_shap_bar.png", dpi=300, bbox_inches="tight")
+plt.close()
 ```
 
 Now how does it do with JNJ?
@@ -546,9 +563,22 @@ print("Directional Accuracy:", direction_acc_JNJ)
 ```{python}
 explainer = shap.TreeExplainer(model_JNJ)
 shap_values_JNJ = explainer.shap_values(X_test_JNJ)
-shap.summary_plot(shap_values_JNJ, X_test_JNJ)
-shap.summary_plot(shap_values_JNJ, X_test_JNJ, plot_type="bar")
+```
 
+
+```{python}
+
+shap.summary_plot(shap_values_JNJ, X_test_JNJ, show=False)
+plt.savefig("JNJ_shap_summary.png", dpi=300, bbox_inches="tight")
+plt.close()
+```
+
+
+```{python}
+
+shap.summary_plot(shap_values_JNJ, X_test_JNJ, plot_type="bar", show=False)
+plt.savefig("JNJ_shap_bar.png", dpi=300, bbox_inches="tight")
+plt.close()
 
 ```
 
@@ -665,8 +695,20 @@ print("Directional Accuracy:", direction_acc_AMZN)
 
 explainer = shap.TreeExplainer(model_AMZN)
 shap_values_AMZN = explainer.shap_values(X_test_AMZN)
-shap.summary_plot(shap_values_AMZN, X_test_AMZN)
-shap.summary_plot(shap_values_AMZN, X_test_AMZN, plot_type="bar")
+```
+
+```{python}
+plt.figure(figsize=(10,6))
+shap.summary_plot(shap_values_AMZN, X_test_AMZN, show=False)
+plt.savefig("AMZN_shap_summary.png", dpi=300, bbox_inches="tight")
+plt.close()
+```
+
+```{python}
+plt.figure(figsize=(10,6))
+shap.summary_plot(shap_values_AMZN, X_test_AMZN, plot_type="bar", show=False)
+plt.savefig("AMZN_shap_bar.png", dpi=300, bbox_inches="tight")
+plt.close()
 
 ```
 
