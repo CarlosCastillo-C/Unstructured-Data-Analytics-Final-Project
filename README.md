@@ -124,8 +124,12 @@ The Model performeance demonstrated limited explantory power in predicitng 5-day
 - S&P 500 (SPY):
     - MAE = 0.015, R² = -0.126, Directional Accuracy = 56.6%.
 
+#### S&P 500 Price Prediction Graph
+![S&P 500 Prediction](S&P_prediction.png)
+
 - NVIDA (NVDA):
     - MAE = 0.04, R² = -0.04, Directional Accuracy = 64%.
+
 
 #### NVDA Price Prediction Graph
 ![NVDA Prediction](nvda_prediction.png)
@@ -133,6 +137,11 @@ The Model performeance demonstrated limited explantory power in predicitng 5-day
 - Johnson & Johnson (JNJ):
     - MAE = 0.03, R² = -0.33, Directional Accuracy = 43.8%.
 
+#### JNJ Price Prediction Graph
+![JNJ Prediction](JNJ_prediction.png)
+
 - Amazon (AMZN):
     - MAE = 0.03, R² = -0.06, Directional Accuracy = 54.2%.
 
+#### AMZN Price Prediction Graph
+![AMZN Prediction](AMZN_prediction.png)
