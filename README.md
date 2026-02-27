@@ -126,6 +126,8 @@ The Model performeance demonstrated limited explantory power in predicitng 5-day
 ##### S&P 500 Price Prediction Graph
 ![S&P 500 Prediction](S&P_prediction.png)
 
+##### S&P 500 SHAP Values
+![S&P 500 Prediction SHAP Values](shap_bar.png)
 
 - S&P 500 (SPY):
     - MAE = 0.015, R² = -0.126, Directional Accuracy = 56.6%.
@@ -133,6 +135,8 @@ The Model performeance demonstrated limited explantory power in predicitng 5-day
 ##### NVDA Price Prediction Graph
 ![NVDA Prediction](nvda_prediction.png)
 
+##### NVDA SHAP Values
+![NVDA Prediction SHAP Values](NVDA_bar.png)
 
 - NVIDA (NVDA):
     - MAE = 0.04, R² = -0.04, Directional Accuracy = 64%.
@@ -140,6 +144,8 @@ The Model performeance demonstrated limited explantory power in predicitng 5-day
 ##### JNJ Price Prediction Graph
 ![JNJ Prediction](JNJ_prediction.png)
 
+##### JNJ SHAP Values
+![JNJ Prediction SHAP Values](JNJ_bar.png)
 
 - Johnson & Johnson (JNJ):
     - MAE = 0.03, R² = -0.33, Directional Accuracy = 43.8%.
@@ -161,5 +167,14 @@ Among the variables that had the most impact on the models
 - VIX
 - Daily range 
 
-It shows that volatility significantly affects these stocks when predicting short-term results.
+It shows that volatility significantly affects these stocks when predicting short-term results, as evidenced by the model struggling to predict a safe stock like JNJ but succeeding with a volatile one like NVIDIA. 
+
+___
+
+### Discussion
+
+Some insights from this project are that short-term returns are difficult to predict. It has been made clear in this case that the models struggle to predict five-day returns for any of the stocks. Regarding the Johnson and Johnson stock, flipping a coin would statistically have better directional accuracy than the model. The low R^2 values mean that the models perform worse than predicting the mean and that there is excessive noise in predicting daily and 5-day returns. Also, the model performs worse than just predicting the average every time. Additionally, more volatile stocks seem better suited to the model, since NVIDIA had the highest MAE and an R^2 closer to 0. In contrast, stable/defensive stocks like JNJ and the S&P are harder to predict for short-term returns. Markets are hard to predict on short-term horizons.
+
+This matters because it further shows the limits of Machine Learning, especially in financial markets, and how finance is complex and has many more variables than just numbers. Sentiment Analysis, Order Flow in trading, and macroeconomic policy also play a huge role in the Finance Markets. When it comes to answering the question: how well can machine learning models predict short-term returns in different stocks, the answer is not well. However, with more time and resources, if I were to take this project further, I would implement sentiment analysis covering the same time period as the model. Additionally, I would seek more quantitative data, such as order flow, to improve the model's accuracy. 
+
 
