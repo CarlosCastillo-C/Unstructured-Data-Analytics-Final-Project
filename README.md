@@ -128,7 +128,7 @@ The Model performeance demonstrated limited explantory power in predicitng 5-day
     - MAE = 0.04, R² = -0.04, Directional Accuracy = 64%.
 
 #### NVDA Price Prediction Graph
-![NVDA Prediction](images/nvda_prediction.png)
+![NVDA Prediction](nvda_prediction.png)
 
 - Johnson & Johnson (JNJ):
     - MAE = 0.03, R² = -0.33, Directional Accuracy = 43.8%.
