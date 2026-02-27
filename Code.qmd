@@ -270,6 +270,7 @@ plt.title("SNP Price Prediction")
 plt.xlabel("Time")
 plt.ylabel('Price')
 plt.legend()
+plt.savefig("S&P_prediction.png", dpi=300, bbox_inches="tight")
 plt.show()
 ```
 
@@ -360,14 +361,14 @@ NVDA_df["vol_20"] = NVDA_df["close"].pct_change().rolling(20).std()
 NVDA_df['close_vs_moving_average_7'] = NVDA_df['close'] - NVDA_df['moving_average_7']
 NVDA_df['close_vs_moving_average_30'] = NVDA_df['close'] - NVDA_df['moving_average_30']
 
-## 5-day forward return target
+
 NVDA_df['target'] = NVDA_df['close'].pct_change(5).shift(-5)
 ```
 
 ```{python}
 
 
-features_NVDA = ['percent_change','return_3','return_5','daily_range','gap','close_vs_moving_average_7','close_vs_moving_average_30', 'volume_change','vol_10','vol_20', 'vix']
+features_NVDA = ['1_day_return','return_3','return_5','daily_range','gap','close_vs_moving_average_7','close_vs_moving_average_30', 'volume_change','vol_10','vol_20', 'vix']
 
 modelNVDA_df = NVDA_df[features_NVDA + ['target']].dropna().copy()
 ```
@@ -406,7 +407,9 @@ plt.title("NVDA Price Prediction")
 plt.xlabel("Time")
 plt.ylabel('Price')
 plt.legend()
+plt.savefig("nvda_prediction.png", dpi=300, bbox_inches="tight")
 plt.show()
+plt.close()
 ```
 
 ```{python}
@@ -489,7 +492,7 @@ JNJ_df['target'] = JNJ_df['close'].pct_change(5).shift(-5)
 ```
 
 ```{python}
-features_JNJ = ['percent_change','return_3','return_5','daily_range','gap','close_vs_moving_average_7','close_vs_moving_average_30', 'volume_change','vol_10','vol_20', 'vix']
+features_JNJ = ['1_day_return','return_3','return_5','daily_range','gap','close_vs_moving_average_7','close_vs_moving_average_30', 'volume_change','vol_10','vol_20', 'vix']
 
 modelJNJ_df = JNJ_df[features_JNJ + ['target']].dropna().copy()
 ```
@@ -528,10 +531,9 @@ plt.title("JNJ Price Prediction")
 plt.xlabel("Time")
 plt.ylabel('Price')
 plt.legend()
+plt.savefig("JNJ_prediction.png", dpi=300, bbox_inches="tight")
 plt.show()
-
-
-
+plt.close()
 ```
 
 ```{python}
@@ -611,7 +613,7 @@ AMZN_df['target'] = AMZN_df['close'].pct_change(5).shift(-5)
 ```
 
 ```{python}
-features_AMZN = ['percent_change','return_3','return_5','daily_range','gap','close_vs_moving_average_7','close_vs_moving_average_30', 'volume_change','vol_10','vol_20', 'vix']
+features_AMZN = ['1_day_return','return_3','return_5','daily_range','gap','close_vs_moving_average_7','close_vs_moving_average_30', 'volume_change','vol_10','vol_20', 'vix']
 
 modelAMZN_df = AMZN_df[features_AMZN + ['target']].dropna().copy()
 ```
@@ -646,9 +648,9 @@ plt.title("AMZN Price Prediction")
 plt.xlabel("Time")
 plt.ylabel('Price')
 plt.legend()
+plt.savefig("AMZN_prediction.png", dpi=300, bbox_inches="tight")
 plt.show()
-
-
+plt.close()
 ```
 
 
