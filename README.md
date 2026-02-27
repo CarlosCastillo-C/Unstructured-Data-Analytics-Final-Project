@@ -1,5 +1,5 @@
 # Short-Term Stock Return Prediction Using Machine Learning
-Machine learning project that integrates Alpaca API and Yahoo Finance data to engineer market features and predict 5-day forward returns for four publicly traded stocks.
+Machine learning project that integrates Alpaca API and the Yahoo Finance package in python to engineer market features and predict 5-day forward returns for four publicly traded stocks.
 
 # Executive Summary
 
@@ -117,6 +117,22 @@ Evaluation Metrics
 - R-Squared (R^2) was used to assess the explanatory power.
 - Directional Accuracy was used to see how accurately the model can predict the sign of returns.
 
+### Results
 
+The Model performeance demonstrated limited explantory power in predicitng 5-day forward returns.
 
+- S&P 500 (SPY):
+    - MAE = 0.015, R² = -0.126, Directional Accuracy = 56.6%.
+
+- NVIDA (NVDA):
+    - MAE = 0.04, R² = -0.04, Directional Accuracy = 64%.
+
+#### NVDA Price Prediction Graph
+![NVDA Prediction](images/nvda_prediction.png)
+
+- Johnson & Johnson (JNJ):
+    - MAE = 0.03, R² = -0.33, Directional Accuracy = 43.8%.
+
+- Amazon (AMZN):
+    - MAE = 0.03, R² = -0.06, Directional Accuracy = 54.2%.
 
