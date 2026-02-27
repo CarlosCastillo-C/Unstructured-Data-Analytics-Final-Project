@@ -136,7 +136,7 @@ The Model performeance demonstrated limited explantory power in predicitng 5-day
 ![NVDA Prediction](nvda_prediction.png)
 
 ##### NVDA SHAP Values
-![NVDA Prediction SHAP Values](NVDA_bar.png)
+![NVDA Prediction SHAP Values](NVDA_shap_bar.png)
 
 - NVIDA (NVDA):
     - MAE = 0.04, R² = -0.04, Directional Accuracy = 64%.
@@ -145,7 +145,7 @@ The Model performeance demonstrated limited explantory power in predicitng 5-day
 ![JNJ Prediction](JNJ_prediction.png)
 
 ##### JNJ SHAP Values
-![JNJ Prediction SHAP Values](JNJ_bar.png)
+![JNJ Prediction SHAP Values](JNJ_shap_bar.png)
 
 - Johnson & Johnson (JNJ):
     - MAE = 0.03, R² = -0.33, Directional Accuracy = 43.8%.
@@ -153,6 +153,8 @@ The Model performeance demonstrated limited explantory power in predicitng 5-day
 ##### AMZN Price Prediction Graph
 ![AMZN Prediction](AMZN_prediction.png)
 
+##### AMZN SHAP Values
+![AMZN Prediction SHAP Values](AMZN_shap_bar.png)
 
 - Amazon (AMZN):
     - MAE = 0.03, R² = -0.06, Directional Accuracy = 54.2%.
